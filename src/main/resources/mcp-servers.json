@@ -4,7 +4,15 @@
       "command": "npx.cmd",
       "args": ["-y", "@amap/amap-maps-mcp-server"],
       "env": {
-        "AMAP_MAPS_API_KEY": "26b33ad0701d196662b7fe6e14fa8734"
+        "AMAP_MAPS_API_KEY": "高德地图api"
+      }
+    },
+    "tavily-mcp": {
+      "command": "npx.cmd",
+      "args": ["-y", "tavily-mcp@latest"],
+      "env": {
+        "TAVILY_API_KEY": "api地址:https://docs.tavily.com/welcome",
+        "DEFAULT_PARAMETERS": "{\"include_images\": true, \"max_results\": 15, \"search_depth\": \"advanced\"}"
       }
     }
   }

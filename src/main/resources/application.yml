@@ -14,10 +14,11 @@ spring:
       embedding:
         options:
           model: text-embedding-v4
-    mcp:
-      client:
-        stdio:
-          servers-configuration: classpath:mcp-servers.json
+#开启MCP
+#    mcp:
+#      client:
+#        stdio:
+#          servers-configuration: classpath:mcp-servers.json
   datasource:
     mysql:
       jdbc-url: jdbc:mysql://localhost:3306/memory?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
