@@ -1,0 +1,19 @@
+# 忽略temp文件夹
+/tmp/
+#忽略target
+target/
+#忽略idea配置
+.idea/
+
+front/node_modules/
+
+.mvn/
+
+.claude/
+
+test/
+
+src/main/resources/application-dev.yml
+
+src/main/resources/application-prod.yml
+
