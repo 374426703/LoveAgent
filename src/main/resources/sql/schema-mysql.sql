@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS users
 (
     `id`            BIGINT(19)   NOT NULL AUTO_INCREMENT,
     `username`      VARCHAR(64)  NOT NULL,
-    `password_hash` VARCHAR(256) NOT NULL,
+    `password_hash` VARCHAR(256) NOT NULL COMMENT 'BCrypt encoded password',
     `nickname`      VARCHAR(64)  DEFAULT NULL,
     `created_at`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),

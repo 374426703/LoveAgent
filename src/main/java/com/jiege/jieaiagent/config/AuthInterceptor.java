@@ -1,7 +1,7 @@
 package com.jiege.jieaiagent.config;
 
-import com.jiege.jieaiagent.mapper.UserMapper;
 import com.jiege.jieaiagent.model.User;
+import com.jiege.jieaiagent.service.UserService;
 import com.jiege.jieaiagent.util.JwtUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,16 +13,14 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class AuthInterceptor implements HandlerInterceptor {
 
     @Resource
-    private UserMapper userMapper;
+    private JwtUtil jwtUtil;
+
+    @Resource
+    private UserService userService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            return true;
-        }
-
-        String path = request.getRequestURI();
-        if (path.startsWith("/api/user/login") || path.startsWith("/api/user/register")) {
             return true;
         }
 
@@ -33,13 +31,13 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         String token = authHeader.substring(7);
-        Long userId = JwtUtil.getUserId(token);
+        Long userId = jwtUtil.getUserId(token);
         if (userId == null) {
             writeUnauthorized(response, "登录已过期，请重新登录");
             return false;
         }
 
-        User user = userMapper.selectById(userId);
+        User user = userService.getUserEntity(userId);
         if (user == null) {
             writeUnauthorized(response, "用户不存在");
             return false;

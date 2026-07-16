@@ -1,3 +1,7 @@
+jwt:
+  secret: YuAiAgent2024SecretKeyForJwtTokenGenerationAndValidation!!!
+  expiration-ms: 604800000
+
 server:
   port: 8080
 spring:

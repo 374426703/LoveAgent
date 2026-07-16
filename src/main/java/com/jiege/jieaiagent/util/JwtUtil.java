@@ -3,37 +3,45 @@ package com.jiege.jieaiagent.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+@Component
 public class JwtUtil {
 
-    private static final String SECRET = "YuAiAgent2024SecretKeyForJwtTokenGenerationAndValidation!!!";
-    private static final long EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000L; // 7 days
-    private static final SecretKey KEY = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    private final SecretKey key;
+    private final long expirationMs;
 
-    public static String generate(Long userId, String username) {
+    public JwtUtil(@Value("${jwt.secret}") String secret,
+                   @Value("${jwt.expiration-ms}") long expirationMs) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.expirationMs = expirationMs;
+    }
+
+    public String generate(Long userId, String username) {
         Date now = new Date();
         return Jwts.builder()
                 .subject(String.valueOf(userId))
                 .claim("username", username)
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + EXPIRATION_MS))
-                .signWith(KEY)
+                .expiration(new Date(now.getTime() + expirationMs))
+                .signWith(key)
                 .compact();
     }
 
-    public static Claims parse(String token) {
+    public Claims parse(String token) {
         return Jwts.parser()
-                .verifyWith(KEY)
+                .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
     }
 
-    public static Long getUserId(String token) {
+    public Long getUserId(String token) {
         try {
             String sub = parse(token).getSubject();
             return Long.valueOf(sub);
@@ -42,7 +50,7 @@ public class JwtUtil {
         }
     }
 
-    public static boolean validate(String token) {
+    public boolean validate(String token) {
         try {
             parse(token);
             return true;
