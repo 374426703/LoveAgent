@@ -26,7 +26,14 @@
             <div v-if="showDropdown" class="dropdown-menu">
               <div class="dropdown-header">
                 <span>{{ user?.nickname || user?.username }}</span>
+                <span v-if="user?.role === 'ADMIN'" class="admin-badge">管理员</span>
               </div>
+              <router-link v-if="user?.role === 'ADMIN'" to="/admin" class="dropdown-item admin-link" @click="showDropdown = false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                管理控制台
+              </router-link>
               <button class="dropdown-item logout" @click="handleLogout">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -349,6 +356,24 @@ if (typeof window !== 'undefined') {
 .dropdown-item.logout:hover {
   background: rgba(239, 68, 68, 0.08);
   color: #ef4444;
+}
+
+.admin-link {
+  color: var(--sun-orange);
+}
+.admin-link:hover {
+  background: rgba(251, 191, 36, 0.08);
+}
+
+.admin-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+  color: white;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
 .dropdown-fade-enter-active,

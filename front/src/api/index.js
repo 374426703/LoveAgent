@@ -79,6 +79,46 @@ export function apiUpdateConversationTitle(conversationId, title) {
   })
 }
 
+// ========== Admin APIs ==========
+
+export function getAll(url) {
+  return request(url)
+}
+
+export function uploadDoc(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const token = getToken()
+  return fetch(BASE + '/api/admin/knowledge/upload', {
+    method: 'POST',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    body: formData
+  }).then(resp => {
+    if (resp.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+      throw new Error('Unauthorized')
+    }
+    return resp.json()
+  })
+}
+
+export function deleteDoc(id) {
+  return request(`/api/admin/knowledge/documents/${id}`, { method: 'DELETE' })
+}
+
+export function searchKnowledge(query, page = 1, pageSize = 10) {
+  return request('/api/admin/knowledge/search', {
+    method: 'POST',
+    body: JSON.stringify({ query: query || '', page, pageSize })
+  })
+}
+
+export function reloadKnowledge() {
+  return request('/api/admin/knowledge/reload', { method: 'POST' })
+}
+
 // ========== Chat SSE ==========
 
 export function chatWithLoveApp(message, chatId, onMessage, onDone, onError) {

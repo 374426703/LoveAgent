@@ -24,6 +24,12 @@ const routes = [
     name: 'SuperAgent',
     component: () => import('../views/SuperAgentView.vue'),
     meta: { title: '超级特工 - AI 全能助手', requiresAuth: true }
+  },
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: () => import('../views/AdminView.vue'),
+    meta: { title: '管理控制台 - Love AI Agent', requiresAuth: true }
   }
 ]
 

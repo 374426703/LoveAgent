@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS users
     `username`      VARCHAR(64)  NOT NULL,
     `password_hash` VARCHAR(256) NOT NULL COMMENT 'BCrypt encoded password',
     `nickname`      VARCHAR(64)  DEFAULT NULL,
+    `role`          VARCHAR(16)  NOT NULL DEFAULT 'USER',
     `created_at`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_username` (`username`)
@@ -31,4 +32,16 @@ CREATE TABLE IF NOT EXISTS SPRING_AI_CHAT_MEMORY
     PRIMARY KEY (`id`),
     INDEX `SPRING_AI_CHAT_MEMORY_CONVERSATION_ID_TIMESTAMP_IDX` (`conversation_id`, `timestamp`),
     CONSTRAINT TYPE_CHECK CHECK (type IN ('USER', 'ASSISTANT', 'SYSTEM', 'TOOL'))
+);
+
+CREATE TABLE IF NOT EXISTS knowledge_documents
+(
+    `id`          BIGINT(19)   NOT NULL AUTO_INCREMENT,
+    `filename`    VARCHAR(255) NOT NULL,
+    `title`       VARCHAR(255) NOT NULL DEFAULT '',
+    `chunk_count` INT          NOT NULL DEFAULT 0,
+    `doc_ids`     TEXT         DEFAULT NULL,
+    `status`      VARCHAR(16)  NOT NULL DEFAULT 'ACTIVE',
+    `created_at`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
 );

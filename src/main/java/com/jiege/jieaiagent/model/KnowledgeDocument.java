@@ -14,13 +14,14 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("users")
-public class User {
+@TableName("knowledge_documents")
+public class KnowledgeDocument {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String username;
-    private String passwordHash;
-    private String nickname;
-    private String role;
+    private String filename;
+    private String title;
+    private Integer chunkCount;
+    private String docIds;
+    private String status;
     private LocalDateTime createdAt;
 }

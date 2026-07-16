@@ -24,6 +24,8 @@ public class AuthInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        String path = request.getRequestURI();
+
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             writeUnauthorized(response, "请先登录");
@@ -43,6 +45,13 @@ public class AuthInterceptor implements HandlerInterceptor {
             return false;
         }
 
+        if (path.startsWith("/api/admin/")) {
+            if (!"ADMIN".equals(user.getRole())) {
+                writeForbidden(response, "仅管理员可访问");
+                return false;
+            }
+        }
+
         request.setAttribute("currentUser", user);
         return true;
     }
@@ -51,5 +60,11 @@ public class AuthInterceptor implements HandlerInterceptor {
         response.setStatus(401);
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write("{\"code\":401,\"message\":\"" + message + "\"}");
+    }
+
+    private void writeForbidden(HttpServletResponse response, String message) throws Exception {
+        response.setStatus(403);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"code\":403,\"message\":\"" + message + "\"}");
     }
 }

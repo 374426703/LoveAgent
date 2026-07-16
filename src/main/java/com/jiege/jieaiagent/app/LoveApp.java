@@ -115,13 +115,13 @@ public class LoveApp {
      * @return
      */
     public Flux<String> doChatByStream(String message, String chatId) {
-        ToolCallback[] toolCallbackMcp = toolCallbackProvider.getToolCallbacks();
+//        ToolCallback[] toolCallbackMcp = toolCallbackProvider.getToolCallbacks();
         return chatClient
                 .prompt()
                 .user(message)
                 .advisors(spec -> spec.param(ChatMemory.CONVERSATION_ID, chatId))
                 .advisors(QuestionAnswerAdvisor.builder(loveAppVectorStore).build())
-                .toolCallbacks(toolCallbackMcp)
+//                .toolCallbacks(toolCallbackMcp)
                 .stream()
                 .content();
     }
@@ -152,6 +152,7 @@ public class LoveApp {
     // AI 恋爱知识库问答功能
 
     @Resource
+    @org.springframework.beans.factory.annotation.Qualifier("pgVectorVectorStore")
     private VectorStore loveAppVectorStore;
 
     @Resource

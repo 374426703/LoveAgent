@@ -41,10 +41,11 @@ public class UserService {
                 .username(username)
                 .passwordHash(passwordEncoder.encode(password))
                 .nickname(nickname)
+                .role("USER")
                 .build();
         userMapper.insert(user);
 
-        String token = jwtUtil.generate(user.getId(), username);
+        String token = jwtUtil.generate(user.getId(), username, "USER");
 
         return LoginResultVO.builder()
                 .token(token)
@@ -52,6 +53,7 @@ public class UserService {
                         .id(user.getId())
                         .username(username)
                         .nickname(nickname)
+                        .role("USER")
                         .build())
                 .build();
     }
@@ -67,7 +69,7 @@ public class UserService {
             throw new BusinessException("用户名或密码错误");
         }
 
-        String token = jwtUtil.generate(user.getId(), user.getUsername());
+        String token = jwtUtil.generate(user.getId(), user.getUsername(), user.getRole());
 
         return LoginResultVO.builder()
                 .token(token)
@@ -75,6 +77,7 @@ public class UserService {
                         .id(user.getId())
                         .username(user.getUsername())
                         .nickname(user.getNickname())
+                        .role(user.getRole())
                         .build())
                 .build();
     }
@@ -88,6 +91,7 @@ public class UserService {
                 .id(user.getId())
                 .username(user.getUsername())
                 .nickname(user.getNickname())
+                .role(user.getRole())
                 .build();
     }
 
