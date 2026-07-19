@@ -237,6 +237,7 @@ function sendMessage(text) {
 
   currentSSE = executeTaskAgent(
     text.trim(),
+    chatId,
     (event) => {
       switch (event.type) {
         case 'thinking':

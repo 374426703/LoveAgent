@@ -133,7 +133,7 @@ export function chatWithSuperAgent(message, chatId, onMessage, onDone, onError) 
   return createSSEConnection(url, onMessage, onDone, onError)
 }
 
-export function executeTaskAgent(message, onEvent, onDone, onError) {
+export function executeTaskAgent(message, chatId, onEvent, onDone, onError) {
   const controller = new AbortController()
   let reader = null
 
@@ -141,7 +141,7 @@ export function executeTaskAgent(message, onEvent, onDone, onError) {
     method: 'POST',
     signal: controller.signal,
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ message })
+    body: JSON.stringify({ message, chatId })
   })
     .then(response => {
       if (response.status === 401) {

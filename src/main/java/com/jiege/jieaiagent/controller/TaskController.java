@@ -19,6 +19,7 @@ public class TaskController {
     public SseEmitter executeTask(HttpServletRequest request, @RequestBody java.util.Map<String, String> body) {
         User user = (User) request.getAttribute("currentUser");
         String message = body.get("message");
+        String chatId = body.getOrDefault("chatId", "");
 
         if (message == null || message.isBlank()) {
             SseEmitter err = new SseEmitter();
@@ -26,6 +27,6 @@ public class TaskController {
             return err;
         }
 
-        return taskOrchestratorService.execute(message);
+        return taskOrchestratorService.execute(chatId, message);
     }
 }

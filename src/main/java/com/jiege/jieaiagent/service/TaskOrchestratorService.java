@@ -3,6 +3,9 @@ package com.jiege.jieaiagent.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jiege.jieaiagent.constant.FileConstant;
 import com.jiege.jieaiagent.dto.SseEvent;
+import com.jiege.jieaiagent.mapper.ChatMessageMapper;
+import com.jiege.jieaiagent.model.ChatMessage;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.*;
@@ -18,10 +21,10 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -32,6 +35,9 @@ public class TaskOrchestratorService {
     private final ToolCallingManager toolCallingManager;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @Resource
+    private ChatMessageMapper chatMessageMapper;
+
     public TaskOrchestratorService(org.springframework.ai.chat.model.ChatModel chatModel,
                                    ToolCallback[] allTools) {
         this.allTools = allTools;
@@ -39,17 +45,22 @@ public class TaskOrchestratorService {
         this.toolCallingManager = ToolCallingManager.builder().build();
     }
 
-    public SseEmitter execute(String message) {
+    public SseEmitter execute(String chatId, String message) {
         SseEmitter emitter = new SseEmitter(600000L);
 
         CompletableFuture.runAsync(() -> {
             List<Message> history = new ArrayList<>();
             history.add(new UserMessage(message));
 
+            if (chatId != null && !chatId.isBlank()) {
+                saveMessage(chatId, message, "USER");
+            }
+
             var chatOptions = ToolCallingChatOptions.builder()
                     .internalToolExecutionEnabled(false)
                     .build();
 
+            StringBuilder finalAnswer = new StringBuilder();
             try {
                 for (int step = 0; step < 25; step++) {
                     Prompt prompt = new Prompt(history, chatOptions);
@@ -77,6 +88,7 @@ public class TaskOrchestratorService {
                         String reply = assistantMsg.getText();
                         if (reply != null && !reply.isBlank()) {
                             send(emitter, SseEvent.answer(reply));
+                            finalAnswer.append(reply);
                         }
                         break;
                     }
@@ -125,6 +137,10 @@ public class TaskOrchestratorService {
                 send(emitter, SseEvent.error("任务执行异常: " + e.getMessage()));
             }
 
+            if (chatId != null && !chatId.isBlank() && finalAnswer.length() > 0) {
+                saveMessage(chatId, finalAnswer.toString(), "ASSISTANT");
+            }
+
             send(emitter, SseEvent.done());
             emitter.complete();
         });
@@ -132,6 +148,20 @@ public class TaskOrchestratorService {
         emitter.onTimeout(() -> log.warn("SSE 超时"));
         emitter.onCompletion(() -> log.info("SSE 完成"));
         return emitter;
+    }
+
+    private void saveMessage(String chatId, String content, String type) {
+        try {
+            ChatMessage msg = ChatMessage.builder()
+                    .conversationId(chatId)
+                    .content(content)
+                    .type(type)
+                    .timestamp(LocalDateTime.now())
+                    .build();
+            chatMessageMapper.insert(msg);
+        } catch (Exception e) {
+            log.error("保存聊天消息失败", e);
+        }
     }
 
     private String getSystemPrompt() {
