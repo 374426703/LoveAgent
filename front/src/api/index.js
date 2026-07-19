@@ -133,6 +133,63 @@ export function chatWithSuperAgent(message, chatId, onMessage, onDone, onError) 
   return createSSEConnection(url, onMessage, onDone, onError)
 }
 
+export function executeTaskAgent(message, onEvent, onDone, onError) {
+  const controller = new AbortController()
+  let reader = null
+
+  fetch('/api/task/execute', {
+    method: 'POST',
+    signal: controller.signal,
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ message })
+  })
+    .then(response => {
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+        return
+      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      function processChunk({ done, value }) {
+        if (aborted) return
+        if (done) { if (onDone) onDone(); return }
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data:')) {
+            const data = line.slice(5).trim()
+            if (data && data !== '[DONE]') {
+              try {
+                const event = JSON.parse(data)
+                if (onEvent) onEvent(event)
+              } catch { /* ignore malformed */ }
+            }
+          }
+        }
+        return reader.read().then(processChunk)
+      }
+      return reader.read().then(processChunk)
+    })
+    .catch(err => { if (!aborted && onError) onError(err) })
+
+  let aborted = false
+  return {
+    abort() {
+      aborted = true
+      controller.abort()
+      if (reader) reader.cancel().catch(() => {})
+    }
+  }
+}
+
 function createSSEConnection(url, onMessage, onDone, onError) {
   let aborted = false
   let reader = null

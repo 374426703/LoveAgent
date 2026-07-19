@@ -4,7 +4,21 @@
       <span>{{ assistantEmoji }}</span>
     </div>
 
-    <div class="message-bubble" :class="role">
+    <div v-if="role === 'info'" class="tool-call-bubble">
+      <span class="tool-icon">🔧</span>
+      <span class="tool-text">{{ content }}</span>
+    </div>
+
+    <div v-else-if="role === 'file'" class="file-bubble">
+      <span class="file-icon">📄</span>
+      <span class="file-text">{{ content }}</span>
+      <a v-if="fileUrl" :href="fileUrl" target="_blank" class="file-download-btn" @click.stop>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        下载
+      </a>
+    </div>
+
+    <div v-else class="message-bubble" :class="role">
       <div class="bubble-content" v-html="renderedContent"></div>
       <div class="bubble-time">{{ formattedTime }}</div>
     </div>
@@ -22,7 +36,9 @@ const props = defineProps({
   content: { type: String, required: true },
   role: { type: String, required: true },
   timestamp: { type: [Date, Number], default: () => Date.now() },
-  assistantEmoji: { type: String, default: '🤖' }
+  assistantEmoji: { type: String, default: '🤖' },
+  fileName: { type: String, default: '' },
+  fileUrl: { type: String, default: '' }
 })
 
 function escapeHtml(text) {
@@ -32,32 +48,22 @@ function escapeHtml(text) {
 
 const renderedContent = computed(() => {
   let text = escapeHtml(props.content)
-
   text = text.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
     return `<pre class="code-block"><code>${escapeHtml(code.trim())}</code></pre>`
   })
-
   text = text.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
-
   text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-
   text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>')
-
   text = text.replace(/~~([^~]+)~~/g, '<del>$1</del>')
-
   text = text.replace(/^### (.+)$/gm, '<h3 class="md-h3">$1</h3>')
   text = text.replace(/^## (.+)$/gm, '<h2 class="md-h2">$1</h2>')
   text = text.replace(/^# (.+)$/gm, '<h1 class="md-h1">$1</h1>')
-
   text = text.replace(/^- (.+)$/gm, '<li class="md-li">$1</li>')
   text = text.replace(/(<li class="md-li">.*<\/li>\n?)+/g, '<ul class="md-ul">$&</ul>')
-
   text = text.replace(/^> (.+)$/gm, '<blockquote class="md-quote">$1</blockquote>')
-
   text = text.replace(/\n\n+/g, '</p><p class="md-p">')
   text = text.replace(/\n/g, '<br/>')
   text = '<p class="md-p">' + text + '</p>'
-
   return text
 })
 
@@ -77,19 +83,11 @@ const formattedTime = computed(() => {
 }
 
 @keyframes msgIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.message-wrapper.user {
-  flex-direction: row-reverse;
-}
+.message-wrapper.user { flex-direction: row-reverse; }
 
 .avatar {
   width: 38px;
@@ -100,7 +98,6 @@ const formattedTime = computed(() => {
   justify-content: center;
   font-size: 18px;
   flex-shrink: 0;
-  transition: transform 0.2s ease;
 }
 
 .assistant-avatar {
@@ -119,14 +116,12 @@ const formattedTime = computed(() => {
   border-radius: 18px;
   position: relative;
 }
-
 .message-bubble.assistant {
   background: var(--card-bg);
   border: 1px solid rgba(251, 191, 36, 0.2);
   border-top-left-radius: 6px;
   box-shadow: var(--shadow-sm);
 }
-
 .message-bubble.user {
   background: linear-gradient(135deg, #fef3c7, #fde68a);
   border-top-right-radius: 6px;
@@ -139,7 +134,6 @@ const formattedTime = computed(() => {
   color: var(--text-primary);
   word-break: break-word;
 }
-
 .bubble-time {
   margin-top: 6px;
   font-size: 11px;
@@ -147,15 +141,59 @@ const formattedTime = computed(() => {
   text-align: right;
 }
 
+/* Tool call bubble */
+.tool-call-bubble {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  font-size: 13px;
+  color: #2563eb;
+  max-width: 72%;
+}
+.tool-icon { font-size: 14px; flex-shrink: 0; }
+.tool-text { font-weight: 500; }
+
+/* File bubble */
+.file-bubble {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  border-radius: 12px;
+  font-size: 13px;
+  color: #16a34a;
+  max-width: 72%;
+}
+.file-icon { font-size: 16px; flex-shrink: 0; }
+.file-text { font-weight: 500; flex: 1; }
+.file-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 8px;
+  background: #16a34a;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.file-download-btn:hover { background: #15803d; }
+.file-download-btn svg { width: 14px; height: 14px; }
+
 /* Markdown styles */
-.bubble-content :deep(.md-p) {
-  margin: 0 0 6px;
-}
-
-.bubble-content :deep(.md-p:last-child) {
-  margin-bottom: 0;
-}
-
+.bubble-content :deep(.md-p) { margin: 0 0 6px; }
+.bubble-content :deep(.md-p:last-child) { margin-bottom: 0; }
 .bubble-content :deep(.md-h1),
 .bubble-content :deep(.md-h2),
 .bubble-content :deep(.md-h3) {
@@ -163,21 +201,11 @@ const formattedTime = computed(() => {
   font-weight: 700;
   line-height: 1.4;
 }
-
 .bubble-content :deep(.md-h1) { font-size: 20px; }
 .bubble-content :deep(.md-h2) { font-size: 17px; }
 .bubble-content :deep(.md-h3) { font-size: 15px; }
-
-.bubble-content :deep(.md-ul) {
-  margin: 6px 0;
-  padding-left: 20px;
-}
-
-.bubble-content :deep(.md-li) {
-  margin-bottom: 3px;
-  list-style-type: disc;
-}
-
+.bubble-content :deep(.md-ul) { margin: 6px 0; padding-left: 20px; }
+.bubble-content :deep(.md-li) { margin-bottom: 3px; list-style-type: disc; }
 .bubble-content :deep(.md-quote) {
   border-left: 3px solid var(--sun-yellow);
   padding: 6px 14px;
@@ -187,7 +215,6 @@ const formattedTime = computed(() => {
   color: var(--text-secondary);
   font-style: italic;
 }
-
 .bubble-content :deep(.code-block) {
   display: block;
   background: #1e293b;
@@ -200,7 +227,6 @@ const formattedTime = computed(() => {
   line-height: 1.6;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
-
 .bubble-content :deep(.inline-code) {
   background: rgba(251, 191, 36, 0.12);
   color: #d97706;
@@ -209,23 +235,11 @@ const formattedTime = computed(() => {
   font-size: 0.9em;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
-
-.bubble-content :deep(strong) {
-  font-weight: 700;
-  color: #92400e;
-}
-
-.bubble-content :deep(em) {
-  font-style: italic;
-}
-
-.bubble-content :deep(del) {
-  opacity: 0.6;
-}
+.bubble-content :deep(strong) { font-weight: 700; color: #92400e; }
+.bubble-content :deep(em) { font-style: italic; }
+.bubble-content :deep(del) { opacity: 0.6; }
 
 @media (max-width: 600px) {
-  .message-bubble {
-    max-width: 85%;
-  }
+  .message-bubble, .tool-call-bubble, .file-bubble { max-width: 85%; }
 }
 </style>

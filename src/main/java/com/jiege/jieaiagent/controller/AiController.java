@@ -16,12 +16,15 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -147,5 +150,37 @@ public class AiController {
         if (message == null || message.isBlank()) return "新对话";
         String cleaned = message.replace('\n', ' ').replace('\r', ' ').trim();
         return cleaned.length() > 30 ? cleaned.substring(0, 30) + "..." : cleaned;
+    }
+
+    @GetMapping("/download")
+    public ResponseEntity<byte[]> downloadByPath(@RequestParam("path") String path) throws IOException {
+        String relativePath = URLDecoder.decode(path, StandardCharsets.UTF_8);
+        if (relativePath.contains("..") || relativePath.contains("\\\\")) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        File file = new File(FileConstant.FILE_SAVE_DIR, relativePath);
+        File canonicalFile = file.getCanonicalFile();
+        Path saveDir = Paths.get(FileConstant.FILE_SAVE_DIR).toAbsolutePath().normalize();
+
+        if (!canonicalFile.toPath().normalize().startsWith(saveDir)) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (!canonicalFile.exists() || !canonicalFile.isFile()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String contentType = Files.probeContentType(canonicalFile.toPath());
+        if (contentType == null) {
+            contentType = canonicalFile.getName().toLowerCase().endsWith(".pdf")
+                    ? "application/pdf" : "application/octet-stream";
+        }
+
+        byte[] bytes = Files.readAllBytes(canonicalFile.toPath());
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + canonicalFile.getName() + "\"")
+                .body(bytes);
     }
 }

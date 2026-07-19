@@ -18,8 +18,7 @@ public class ToolRegistration {
     @Bean
     public ToolCallback[] allTools() {
         FileOperationTool fileOperationTool = new FileOperationTool();
-        //网页搜索额度用尽
-//        WebSearchTool webSearchTool = new WebSearchTool(searchApiKey);
+        WebSearchTool webSearchTool = new WebSearchTool(searchApiKey);
         WebScrapingTool webScrapingTool = new WebScrapingTool();
         ResourceDownloadTool resourceDownloadTool = new ResourceDownloadTool();
         TerminalOperationTool terminalOperationTool = new TerminalOperationTool();
@@ -27,7 +26,7 @@ public class ToolRegistration {
         TerminateTool terminateTool = new TerminateTool();
         return ToolCallbacks.from(
                 fileOperationTool,
-//                webSearchTool,
+                webSearchTool,
                 webScrapingTool,
                 resourceDownloadTool,
                 terminalOperationTool,

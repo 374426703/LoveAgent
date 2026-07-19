@@ -42,6 +42,8 @@
             :content="msg.content"
             :role="msg.role"
             :timestamp="msg.timestamp"
+            :file-name="msg.fileName || ''"
+            :file-url="msg.fileUrl || ''"
             assistant-emoji="🦸"
           />
           <TypingIndicator v-if="isStreaming" emoji="🦸" />
@@ -79,7 +81,7 @@ import ChatInput from '../components/ChatInput.vue'
 import TypingIndicator from '../components/TypingIndicator.vue'
 import ConversationSidebar from '../components/ConversationSidebar.vue'
 import ConfirmModal from '../components/ConfirmModal.vue'
-import { chatWithSuperAgent, apiListConversations, apiCreateConversation, apiGetConversationMessages, apiDeleteConversation } from '../api/index.js'
+import { executeTaskAgent, apiListConversations, apiCreateConversation, apiGetConversationMessages, apiDeleteConversation } from '../api/index.js'
 
 const chatContainer = ref(null)
 const messages = ref([])
@@ -127,12 +129,12 @@ function twFlush() {
 }
 
 const quickPrompts = [
-  '🔍 帮我搜索一下今天的科技新闻',
+  '🔍 帮我查询一下上海有哪些约会的地方并生成一份PDF文档',
   '📄 生成一份关于AI发展趋势的PDF报告',
+  '🌐 搜索今天的科技新闻并总结',
   '💻 分析这个项目的技术架构',
-  '🌐 访问某个网站并总结主要内容',
   '📊 帮我整理一份数据分析方案',
-  '🧠 用ReAct模式思考一个复杂问题'
+  '📥 下载某个网站的页面内容'
 ]
 
 onMounted(() => {
@@ -233,21 +235,57 @@ function sendMessage(text) {
 
   const chatId = currentChatId.value
 
-  currentSSE = chatWithSuperAgent(
+  currentSSE = executeTaskAgent(
     text.trim(),
-    chatId,
-    (chunk) => { twFeed(assistantMsg.id, chunk) },
+    (event) => {
+      switch (event.type) {
+        case 'thinking':
+          twFeed(assistantMsg.id, event.content + '\n')
+          break
+        case 'tool_call':
+          twFlush()
+          const toolMsg = {
+            id: 't-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+            content: '🔧 ' + (event.content || '调用工具: ' + event.toolName),
+            role: 'info',
+            timestamp: Date.now()
+          }
+          messages.value.push(toolMsg)
+          scrollToBottom()
+          break
+        case 'file':
+          twFlush()
+          const fileMsg = {
+            id: 'f-' + Date.now(),
+            content: event.content || '文件已生成',
+            role: 'file',
+            timestamp: Date.now(),
+            fileName: event.fileName,
+            fileUrl: event.fileUrl
+          }
+          messages.value.push(fileMsg)
+          scrollToBottom()
+          break
+        case 'answer':
+          twFeed(assistantMsg.id, event.content || '')
+          break
+        case 'error':
+          twFlush()
+          assistantMsg.content = '❌ ' + (event.content || '发生错误')
+          break
+      }
+    },
     () => {
       twFlush()
       isStreaming.value = false
       currentSSE = null
       if (!assistantMsg.content) {
-        assistantMsg.content = '（未收到回复，请稍后重试）'
+        assistantMsg.content = '任务已完成'
       }
       loadConversations()
     },
     (err) => {
-      console.error('SSE error:', err)
+      console.error('Task error:', err)
       twFlush()
       isStreaming.value = false
       currentSSE = null
